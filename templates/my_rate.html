@@ -1,0 +1,16 @@
+{% extends "base_show.html" %}
+{% block th_name %}
+    <th>Title</th>
+    <th>Rating</th>
+    <th>Time</th>
+    <th>Edit</th>
+{% endblock %}
+{% block modal %}
+    <a class="btn btn-primary btn-block" href="{% url 'delete_rate' i.id %}">Confirm</a>
+{% endblock %}
+{% block th_value %}
+    <td><a href="{% url 'movie' i.movie.id %}"> {{ i.movie.name }}</a></td>
+    <td>{{ i.mark }}</td>
+    <td>{{ i.create_time }}</td>
+    <td><a class="btn btn-danger" data-toggle="modal" data-target="#confirm-modal">Delete</a></td>
+{% endblock %}

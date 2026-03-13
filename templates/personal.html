@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load grav_tag %}
+{% block main_content %}
+    <div class="warp-content">
+        <div class="container-fluid">
+            <h1 align="center" style="margin-bottom: 20px">Profile</h1>
+            <div class="thumbnail movie">
+                <div class="row" style="margin-top: 20px">
+                    <div class="col-md-9 col-md-offset-1">
+                        <div class="row">
+                            <div class="col-md-8 col-sm-12">
+                                <div class="row">
+                                    <p style="padding: 10px;margin-left: 5px;font-size: 20px">
+                                        Username: {{ user.username }}
+                                    </p>
+                                </div>
+                                <div class="row">
+                                    <p style="padding: 10px;margin-left: 5px;font-size: 20px">
+                                        Email: {{ user.email }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" style="margin-top: 20px">
+                            <div class="col-md-4">
+                                <h2><a style="padding: 10px; font-size: 30px" class="btn-lg btn-block btn-warning" href="{% url 'mycollect' %}">My collection</a>
+                                </h2>
+                            </div>
+                            <div class="col-md-4">
+                                <h2><a style="padding: 10px; font-size: 30px" class="btn-lg btn-block btn-info" href="{% url 'my_comments' %}">My comments</a>
+                                </h2>
+                            </div>
+                            <div class="col-md-4">
+                                <h2><a style="padding: 10px; font-size: 30px" class="btn-lg btn-block btn-primary " href="{% url 'my_rate' %}">My ratings</a>
+                                </h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="margin-top: 20px">
+                    <div class="col-md-9 col-md-offset-1">
+                        <form action="{% url 'personal' %}" method='post' autocomplete="on">
+                            {% csrf_token %}
+                            {% for field in form %}
+                                <div class="form-group">
+                                    {{ field.label_tag }}
+                                    {{ field.errors }}
+                                    {{ field }}
+                                </div>
+                            {% endfor %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <button type="reset" class="btn-lg btn-block btn-danger ">Reset</button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="submit" class="btn-lg btn-success btn-block">Save</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
