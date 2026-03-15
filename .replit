@@ -37,4 +37,4 @@ externalPort = 80
 [deployment]
 deploymentTarget = "autoscale"
 run = ["gunicorn", "--bind=0.0.0.0:5000", "--reuse-port", "movierecomend.wsgi:application"]
-build = ["pip", "install", "-r", "requirements-run.txt"]
+build = ["bash", "-c", "pip install setuptools && pip install -r requirements-run.txt"]
