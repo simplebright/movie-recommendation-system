@@ -4,6 +4,7 @@
         <div class="movie">
             <div class="title">
                 <h2 style="display:inline-block">{{ title }}</h2>
+                {% if search_message %}<p class="text-warning" role="alert">{{ search_message }}</p>{% endif %}
                 <form method="post" action="{% url 'index' %}" class="form-inline" style="display:inline;float: right; margin-top: 10px; margin-right: 15px">
                     {% csrf_token %}
                     <div class="form-group">

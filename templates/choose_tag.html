@@ -1,16 +1,17 @@
 {% extends 'base.html' %}
 {% block main_content %}
-    <h2 align="center">Choose your favorite tags</h2>
-    <div class="row">
+    <h2 id="choose-tag-heading">Choose your favorite tags (select multiple, then click Submit)</h2>
+    <p class="text-muted">Click each tag to toggle selection. Selected tags are highlighted. Then click Submit to save.</p>
+    <div id="tag-choices" class="row" role="group" aria-labelledby="choose-tag-heading">
         {% for tag in tags %}
             <div class="col-md-2">
-                <label class="tags-input h2"><span class="label label-warning">{{ tag.name }}</span> </label>
+                <button type="button" class="tag-option btn btn-default btn-lg" data-tag-name="{{ tag.name|escapejs }}" aria-pressed="false">{{ tag.name }}</button>
             </div>
         {% endfor %}
     </div>
     <div class="row">
         <div class="col-md-4 col-md-offset-3" style="margin-top: 100px">
-            <button class="btn btn-block btn-success" style="color: white">Submit</button>
+            <button type="button" id="choose-tag-submit" class="btn btn-block btn-success" style="color: white">Submit</button>
         </div>
     </div>
 {% endblock %}
@@ -18,37 +19,28 @@
 {% block bottom-js %}
     <script>
         var items = [];
-        $("label").each(function (index) {
-            let toggle = false;
-            $(this).on("click", function () {
-                console.log(toggle);
-                toggle = !toggle;
-                if (toggle === true) {
-                    items.push($(this).text());
-                    $(this).children('span').addClass('label-danger');
-
-                } else
-                {
-                    console.log("false");
-                    items.splice(items.indexOf($(this).text()), 1);
-                    $(this).children('span').removeClass('label-danger');
-                }
-                console.log(items);
-            });
+        $("#tag-choices .tag-option").on("click", function (e) {
+            e.preventDefault();
+            var name = $(this).data("tag-name");
+            var pressed = $(this).attr("aria-pressed") === "true";
+            if (pressed) {
+                items = items.filter(function (x) { return x !== name; });
+                $(this).attr("aria-pressed", "false").removeClass("btn-primary").addClass("btn-default");
+            } else {
+                items.push(name);
+                $(this).attr("aria-pressed", "true").removeClass("btn-default").addClass("btn-primary");
+            }
         });
-        $('button').click(function () {
+        $("#choose-tag-submit").on("click", function () {
             $.ajax({
                 url: '{% url "choose_tags" %}',
                 type: 'POST',
                 contentType: 'application/json; charset=utf-8',
                 data: JSON.stringify(items),
                 dataType: 'html',
-                success: function (result) {
-                    alert("Done!");
-                    var newDoc = document.open("text/html", "replace");
-                    newDoc.write(result);
-                    newDoc.close();
-                    {#$(html).html(result);#}
+                success: function () {
+                    alert("Preferences saved.");
+                    window.location.href = "{% url 'index' %}";
                 },
                 fail: function (xhr, textStatus, errorThrown) {
                     alert('request failed');

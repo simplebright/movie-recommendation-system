@@ -151,16 +151,20 @@ def movie(request, movie_id):
 
 def search(request):
     if request.method == "POST":
-        key = request.POST["search"]
+        key = (request.POST.get("search") or "").strip()
         request.session["search"] = key
     else:
-        key = request.session.get("search")
+        key = request.session.get("search") or ""
+    if not key:
+        empty_page = Paginator([], 12).page(1)
+        return render(request, "items.html", {"movies": empty_page, "title": "Search results", "search_message": "Please enter a search term (title, director or description)."})
     movies = Movie.objects.filter(
         Q(name__icontains=key) | Q(intro__icontains=key) | Q(director__icontains=key)
     )
     page_num = request.GET.get("page", 1)
     movies = movies_paginator(movies, page_num)
-    return render(request, "items.html", {"movies": movies, 'title': 'Search results'})
+    search_message = None if list(movies) else "No results found. Try different keywords."
+    return render(request, "items.html", {"movies": movies, "title": "Search results", "search_message": search_message})
 
 def all_tags(request):
     tags = Tags.objects.all()

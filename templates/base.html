@@ -44,13 +44,15 @@
                             <ul>
                                 <li class="active"><a href="{% url 'index' %}">Home</a></li>
                                 <li class="active"><a href="{% url 'all_tags' %}">Tags</a></li>
-                                {% if request.session.login_in == True %}
-                                    <li><a href="{% url 'personal' %}">{{ request.session.name }}</a></li>
+                                {% if request.session.login_in and request.session.user_id %}
+                                    <li><a href="{% url 'personal' %}">Profile ({{ request.session.name }})</a></li>
+                                    <li><a href="{% url 'mycollect' %}">My Collect</a></li>
                                     <li><a href="{% url 'logout' %}">Logout</a></li>
                                 {% else %}
                                     <li class="active"><a href="{% url 'login' %}">Login</a></li>
                                     <li class="active"><a href="{% url 'register' %}">Register</a></li>
                                 {% endif %}
+                                <li><a href="{% url 'admin:index' %}">Admin</a></li>
                             </ul>
                         </div>
                     </nav>
