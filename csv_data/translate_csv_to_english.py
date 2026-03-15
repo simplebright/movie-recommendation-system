@@ -6,18 +6,11 @@ from deep_translator import GoogleTranslator
 
 
 BASE_DIR = Path(__file__).parent
-CSV_FILES = ["top250.csv", "movies_3.csv"]
+CSV_FILES = [ "movies_3.csv"]
 
 # columns that may contain Chinese text in these datasets
 TRANSLATE_COLUMNS = [
-    "title",
-    "country",
-    "director_description",
-    "leader",
-    "star",
-    "description",
-    "all_tags",
-    "language",
+    "tags",
 ]
 
 # shared translator and cache across all files/columns
