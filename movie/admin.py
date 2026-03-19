@@ -1,21 +1,48 @@
-from django.apps import apps
 from django.contrib import admin
-from django.db.models import ManyToOneRel, ForeignKey, OneToOneField
+from .models import Comment, LikeComment, Movie, Rate, Tags, User, UserTagPrefer
 
 
-class ListAdminMixin(object):
-    def __init__(self, model, admin_site):
-        self.list_display = [field.name for field in model._meta.fields]
-        self.list_select_related = [x.name for x in model._meta.fields if isinstance(x, (ManyToOneRel, ForeignKey, OneToOneField,))]
-
-        # self.search_fields=[model.p]
-        super(ListAdminMixin, self).__init__(model, admin_site)
+@admin.register(Movie)
+class MovieAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "director", "country", "years", "d_rate", "d_rate_nums", "num")
+    list_filter = ("country", "years", "tags")
+    search_fields = ("name", "director", "intro")
 
 
-models = apps.get_models()
-for model in models:
-    admin_class = type('AdminClass', (ListAdminMixin, admin.ModelAdmin), {})
-    try:
-        admin.site.register(model, admin_class)
-    except admin.sites.AlreadyRegistered:
-        pass
+@admin.register(Tags)
+class TagsAdmin(admin.ModelAdmin):
+    list_display = ("id", "name")
+    search_fields = ("name",)
+
+
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+    list_display = ("id", "username", "email", "created_time")
+    search_fields = ("username", "email")
+
+
+@admin.register(Rate)
+class RateAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "movie", "mark", "create_time")
+    list_select_related = ("user", "movie")
+    list_filter = ("create_time",)
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "movie", "content", "create_time")
+    list_select_related = ("user", "movie")
+    search_fields = ("content",)
+    list_filter = ("create_time",)
+
+
+@admin.register(LikeComment)
+class LikeCommentAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "comment")
+    list_select_related = ("user", "comment")
+
+
+@admin.register(UserTagPrefer)
+class UserTagPreferAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "tag", "score")
+    list_select_related = ("user", "tag")
