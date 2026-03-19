@@ -42,7 +42,10 @@ class UserTagPrefer(models.Model):
         verbose_name_plural = "User preferences"
 
     def __str__(self):
-        return self.user.username + str(self.score)
+        username = getattr(self.user, "username", None)
+        if username:
+            return f"{username} ({self.tag_id}) score={self.score}"
+        return f"UserTagPrefer(user_id={self.user_id}, tag_id={self.tag_id}, score={self.score})"
 
 
 class Movie(models.Model):
@@ -106,6 +109,9 @@ class Rate(models.Model):
         verbose_name = "Rating"
         verbose_name_plural = "Ratings"
 
+    def __str__(self):
+        return f"Rate(user_id={self.user_id}, movie_id={self.movie_id}, mark={self.mark})"
+
 
 class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="User")
@@ -117,6 +123,9 @@ class Comment(models.Model):
         verbose_name = "Comment"
         verbose_name_plural = "Comments"
 
+    def __str__(self):
+        return f"Comment(id={self.id}, user_id={self.user_id}, movie_id={self.movie_id})"
+
 
 class LikeComment(models.Model):
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, verbose_name='Comment')
@@ -125,3 +134,6 @@ class LikeComment(models.Model):
     class Meta:
         verbose_name = "Like"
         verbose_name_plural = "Likes"
+
+    def __str__(self):
+        return f"LikeComment(user_id={self.user_id}, comment_id={self.comment_id})"
