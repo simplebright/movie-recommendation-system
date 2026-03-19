@@ -178,9 +178,12 @@
             <form class="form-horizontal" action='{% url "login" %}' method='POST'>
                 {% csrf_token %}
                 <span class="heading"><a href="{% url 'index' %}">Movie Recommendation System</a> - Login</span>
-                <span style='color:red;'>{{ errormsg }}</span>
+                {% if errormsg %}
+                    <div class="alert alert-danger" role="alert" aria-live="polite">{{ errormsg }}</div>
+                {% endif %}
                 {% for field in form %}
                     <div class="form-group">
+                        <label for="{{ field.id_for_label }}" class="control-label">{{ field.label }}</label>
                         {{ field.errors }}
                         {{ field }}
                     </div>

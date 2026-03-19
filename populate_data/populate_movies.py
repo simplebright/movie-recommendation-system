@@ -1,11 +1,16 @@
 import datetime
 import os
-
-import django
+import sys
 import ast
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "movierecomend.settings")
+import django
 
+# Ensure project root is on sys.path so 'movierecomend' can be imported
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "movierecomend.settings")
 django.setup()
 
 import csv
@@ -66,18 +71,26 @@ def populate_movies(filename):
             years = origin_years.split('(')[0]
         else:
             years = years[0]
-        res = re.match('\d*', star)
+        res = re.match(r'\d*', star)
         int_d_rate_num = int(res[0]) if res else 0
         pic_name = 'movie_cover/' + replace_special_char(title) + '.png'
         years = parse_time(years)
-        leader = '/'.join(ast.literal_eval(leader))
-        movie, created = Movie.objects.get_or_create(name=title, defaults={'image_link': pic_name, 'country': country,
-                                                                           'years': parse_time(years), 'leader': leader,
-                                                                           'd_rate_nums': int_d_rate_num,
-                                                                           'd_rate': star, 'intro': description,
-                                                                           'director': director_description,
-                                                                           'imdb_link': imdb
-                                                                           })
+        # Store original leader string directly to avoid parsing issues with quotes
+        leader_str = leader
+        movie, created = Movie.objects.get_or_create(
+            name=title,
+            defaults={
+                'image_link': pic_name,
+                'country': country,
+                'years': parse_time(years),
+                'leader': leader_str,
+                'd_rate_nums': int_d_rate_num,
+                'd_rate': star,
+                'intro': description,
+                'director': director_description,
+                'imdb_link': imdb,
+            },
+        )
         print('movie', movie, 'created', created)
         tags = [tag.strip() for tag in tags.split('/')]
         for tag in tags:
@@ -88,8 +101,8 @@ def populate_movies(filename):
 
 
 if __name__ == '__main__':
-    file1 = '../csv_data/top250.csv'
-    file2 = '../csv_data/movies_3.csv'
+    # Use absolute paths from project root to avoid path issues
+    csv_top250 = os.path.join(BASE_DIR, 'csv_data', 'top250.csv')
+
     clear_movie_tags()
-    populate_movies(file1)
-    populate_movies(file2)
+    populate_movies(csv_top250)

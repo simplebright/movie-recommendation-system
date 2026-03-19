@@ -4,6 +4,7 @@ from functools import wraps
 
 from django.core.cache import cache
 from django.core.paginator import Paginator
+from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.db.models import Q, Count
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
@@ -20,7 +21,12 @@ def movies_paginator(movies, page):
     paginator = Paginator(movies, 12)
     if page is None:
         page = 1
-    movies = paginator.page(page)
+    try:
+        movies = paginator.page(page)
+    except PageNotAnInteger:
+        movies = paginator.page(1)
+    except EmptyPage:
+        movies = paginator.page(paginator.num_pages)
     return movies
 
 
@@ -112,23 +118,46 @@ def login_in(func):
 def index(request):
     order =  request.POST.get("order") or request.session.get('order')
     request.session['order']=order
+    user_id = request.session.get("user_id")
+    is_login = request.session.get("login_in") and user_id
+
+    # If user is logged in but has not selected any tags yet, show tag selection on Home.
+    if is_login and not UserTagPrefer.objects.filter(user_id=user_id).exists():
+        tags = Tags.objects.all()
+        return render(request, 'choose_tag.html', {'tags': tags, 'from_home': True})
+
+    movies = Movie.objects.all()
+    title = 'By popularity'
+
+    # If user has tag preferences, prioritize movies matching their tags.
+    if is_login:
+        prefer_tag_ids = list(
+            UserTagPrefer.objects.filter(user_id=user_id).values_list('tag_id', flat=True)
+        )
+        if prefer_tag_ids:
+            movies = movies.filter(tags__id__in=prefer_tag_ids).distinct()
+
     if order == 'collect':
-        movies = Movie.objects.annotate(collectors=Count('collect')).order_by('-collectors')
-        print(movies.query)
+        movies = movies.annotate(collectors=Count('collect')).order_by('-collectors')
         title = 'By collection'
     elif order == 'rate':
-        movies = Movie.objects.all().annotate(marks=Avg('rate__mark')).order_by('-marks')
+        movies = movies.annotate(marks=Avg('rate__mark')).order_by('-marks')
         title = 'By rating'
     elif order == 'years':
-        movies = Movie.objects.order_by('-years')
+        movies = movies.order_by('-years')
         title = 'By date'
     else:
-        movies = Movie.objects.order_by('-num')
+        movies = movies.order_by('-num')
         title = 'By popularity'
     paginator = Paginator(movies, 8)
     new_list = Movie.objects.order_by('-years')[:8]
     current_page = request.GET.get("page", 1)
-    movies = paginator.page(current_page)
+    try:
+        movies = paginator.page(current_page)
+    except PageNotAnInteger:
+        movies = paginator.page(1)
+    except EmptyPage:
+        movies = paginator.page(paginator.num_pages)
     return render(request, 'items.html', {'movies': movies, 'new_list': new_list, 'title': title})
 
 def movie(request, movie_id):
@@ -166,9 +195,15 @@ def search(request):
     search_message = None if list(movies) else "No results found. Try different keywords."
     return render(request, "items.html", {"movies": movies, "title": "Search results", "search_message": search_message})
 
+@login_in
 def all_tags(request):
+    """
+    Tags entry in the navigation shows the same interactive tag
+    selection experience used on first login, so users can update
+    their preferences at any time.
+    """
     tags = Tags.objects.all()
-    return render(request, "all_tags.html", {'all_tags': tags})
+    return render(request, "choose_tag.html", {'tags': tags})
 
 def one_tag(request, one_tag_id):
     tag = Tags.objects.get(id=one_tag_id)
@@ -231,13 +266,28 @@ def personal(request):
 @login_in
 @csrf_exempt
 def choose_tags(request):
-    tags_name = json.loads(request.body)
+    try:
+        tags_name = json.loads(request.body or b"[]")
+    except json.JSONDecodeError:
+        return JSONResponse({"ok": False, "message": "Invalid request payload."}, status=400)
+
+    if not isinstance(tags_name, list):
+        return JSONResponse({"ok": False, "message": "Invalid tag selection."}, status=400)
+
+    tags_name = [str(x).strip() for x in tags_name if str(x).strip()]
+    if not tags_name:
+        return JSONResponse({"ok": False, "message": "Please select at least one tag."}, status=400)
+
     user_id = request.session.get('user_id')
+    # Replace old preferences so Home reflects latest selection.
+    UserTagPrefer.objects.filter(user_id=user_id).delete()
     for tag_name in tags_name:
         tag = Tags.objects.filter(name=tag_name.strip()).first()
+        if not tag:
+            return JSONResponse({"ok": False, "message": f"Unknown tag: {tag_name}."}, status=400)
         UserTagPrefer.objects.create(tag_id=tag.id, user_id=user_id, score=5)
-    request.session.pop('new')
-    return redirect(reverse("index"))
+    request.session.pop('new', None)
+    return JSONResponse({"ok": True, "message": "Preferences saved."})
 
 
 @login_in

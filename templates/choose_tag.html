@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
 {% block main_content %}
     <h2 id="choose-tag-heading">Choose your favorite tags (select multiple, then click Submit)</h2>
-    <p class="text-muted">Click each tag to toggle selection. Selected tags are highlighted. Then click Submit to save.</p>
+    <p class="text-muted">Select one or more tags, then click Submit to save. Selected tags are highlighted and announced for assistive technologies.</p>
+    <div id="choose-tag-message" class="alert" role="status" aria-live="polite" style="display:none;"></div>
     <div id="tag-choices" class="row" role="group" aria-labelledby="choose-tag-heading">
         {% for tag in tags %}
             <div class="col-md-2">
-                <button type="button" class="tag-option btn btn-default btn-lg" data-tag-name="{{ tag.name|escapejs }}" aria-pressed="false">{{ tag.name }}</button>
+                <button type="button" class="tag-option btn btn-default btn-lg" data-tag-name="{{ tag.name }}" aria-pressed="false">{{ tag.name }}</button>
             </div>
         {% endfor %}
     </div>
@@ -19,35 +20,54 @@
 {% block bottom-js %}
     <script>
         var items = [];
-        $("#tag-choices .tag-option").on("click", function (e) {
+        function showChooseTagMessage(kind, text) {
+            var el = $("#choose-tag-message");
+            el.removeClass("alert-success alert-danger alert-info");
+            if (kind === "success") el.addClass("alert-success");
+            else if (kind === "error") el.addClass("alert-danger");
+            else el.addClass("alert-info");
+            el.text(text).show();
+        }
+
+        $(document).on("click", "#tag-choices .tag-option", function (e) {
             e.preventDefault();
-            var name = $(this).data("tag-name");
+            var name = $(this).attr("data-tag-name") || $(this).text().trim();
             var pressed = $(this).attr("aria-pressed") === "true";
             if (pressed) {
                 items = items.filter(function (x) { return x !== name; });
                 $(this).attr("aria-pressed", "false").removeClass("btn-primary").addClass("btn-default");
+                showChooseTagMessage("info", "Removed tag: " + name + ".");
             } else {
                 items.push(name);
                 $(this).attr("aria-pressed", "true").removeClass("btn-default").addClass("btn-primary");
+                showChooseTagMessage("info", "Selected tag: " + name + ".");
             }
         });
         $("#choose-tag-submit").on("click", function () {
+            if (!items.length) {
+                showChooseTagMessage("error", "Please select at least one tag before submitting.");
+                return;
+            }
             $.ajax({
                 url: '{% url "choose_tags" %}',
                 type: 'POST',
                 contentType: 'application/json; charset=utf-8',
                 data: JSON.stringify(items),
-                dataType: 'html',
-                success: function () {
-                    alert("Preferences saved.");
+                dataType: 'json',
+                success: function (resp) {
+                    showChooseTagMessage("success", (resp && resp.message) ? resp.message : "Preferences saved.");
                     window.location.href = "{% url 'index' %}";
                 },
                 fail: function (xhr, textStatus, errorThrown) {
-                    alert('request failed');
+                    showChooseTagMessage("error", "Request failed. Please try again.");
                 },
                 error: function (jqXHR, exception) {
-                    console.log(jqXHR.status);
-                    console.log(exception);
+                    var msg = "Request failed. Please try again.";
+                    try {
+                        var resp = JSON.parse(jqXHR.responseText);
+                        if (resp && resp.message) msg = resp.message;
+                    } catch (e) {}
+                    showChooseTagMessage("error", msg);
                 }
             });
         })

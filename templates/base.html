@@ -16,6 +16,7 @@
 </head>
 <body>
 <div class="wrap-body">
+    <a href="#main-content" class="sr-only sr-only-focusable">Skip to main content</a>
     <header>
         <div class="wrap-header zerogrid">
             <div class="row">
@@ -63,7 +64,7 @@
     <!--////////////////////////////////////Container-->
     <section id="container">
         <div class="wrap-container zerogrid">
-            <main id="main-content" class="col-2-3">
+            <main id="main-content" class="col-2-3" tabindex="-1">
                 {% block main_content %}
                 {% endblock %}
             </main>

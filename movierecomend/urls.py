@@ -52,7 +52,9 @@ urlpatterns = [
                   path("director_movie/<str:director_name>", views.director_movie, name="director_movie"),
                   path("user_recommend/", views.user_recommend, name="user_recommend"),
                   path("item_recommend/", views.item_recommend, name="item_recommend"),
-              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
+              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(
+    settings.STATIC_URL, document_root=settings.STATIC_ROOT
+)
 
 admin.site.site_header = 'Movie Recommendation System Admin'
 admin.site.index_title = 'Admin'
